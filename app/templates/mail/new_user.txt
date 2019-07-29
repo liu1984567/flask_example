@@ -1,0 +1,5 @@
+dear {{ user.username }}，
+
+Welcome register Flasky!
+
+If you have some question, please freely send email to liu198456@126.com.
