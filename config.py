@@ -1,4 +1,9 @@
-#config.py
+# -*- coding: utf-8 -*-
+"""
+    config.py
+
+    Implements the configuration related objects.
+"""
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
