@@ -1,5 +1,10 @@
-#email.py
-# -*- coding: utf-8 -*-
+"""
+    model.py
+
+    Implements the management.
+"""
+
+from . import db
 
 class Role(db.Model):
     __tablename__ = 'roles'

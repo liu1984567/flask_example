@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     app.__init__.py
 
@@ -9,6 +8,7 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from config import config
+from .main import main as main_blueprint
 
 bootstrap = Bootstrap()
 moment = Moment()
@@ -22,5 +22,7 @@ def create_app(config_name):
     bootstrap.init_app(app)
     moment.init_app(app)
     db.init_app(app)
+
+    app.register_blueprint(main_blueprint)
 
     return app
