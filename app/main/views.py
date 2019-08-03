@@ -3,12 +3,13 @@
 
     Implements all views in the app.
 """
-from flask import redirect, render_template, session, url_for, flash
+from flask import redirect, render_template, session, url_for, current_app
 from datetime import datetime
 from . import main
 from .forms import NameForm
 from .. import db
 from ..models import User
+from ..email import send_mail
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -18,11 +19,11 @@ def index():
         user = User.query.filter_by(username=form.name.data).first()
         if user is None:
             newuser = User(username=form.name.data)
-            #db.session.add(newuser)
+            db.session.add(newuser)
             session['known'] = False
-            #if app.config['FLASKY_ADMIN']:
-            #    print('New user %s, send a email to admin' % newuser.username)
-            #    send_mail(app.config['FLASKY_ADMIN'], 'New User', 'mail/new_user', user=newuser)
+            if current_app.config['FLASKY_ADMIN']:
+                print('New user %s, send a email to admin' % newuser.username)
+                send_mail(current_app.config['FLASKY_ADMIN'], 'New User', 'mail/new_user', user=newuser)
         else:
             session['known'] = True
         session['name'] = form.name.data
