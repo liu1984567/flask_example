@@ -12,24 +12,9 @@ from ..models import User
 from ..email import send_mail
 
 
-@main.route('/', methods=['GET', 'POST'])
+@main.route('/', methods=['GET'])
 def index():
-    form = NameForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.name.data).first()
-        if user is None:
-            newuser = User(username=form.name.data)
-            db.session.add(newuser)
-            session['known'] = False
-            if current_app.config['FLASKY_ADMIN']:
-                print('New user %s, send a email to admin' % newuser.username)
-                send_mail(current_app.config['FLASKY_ADMIN'], 'New User', 'mail/new_user', user=newuser)
-        else:
-            session['known'] = True
-        session['name'] = form.name.data
-        form.name.data=''
-        return redirect(url_for('main.index'))
-    return render_template('index.html', current_time=datetime.utcnow(), form=form, name=session.get('name'), known=session.get('known'))
+    return render_template('index.html')
 
 #/user/liudonghao
 @main.route('/user/<name>')
