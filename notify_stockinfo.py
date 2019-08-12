@@ -8,11 +8,17 @@ import time
 from urllib.request import urlopen
 import smtplib
 from email.mime.text import MIMEText
+import threading
 
 
 HTML_STR = 'http://hq.sinajs.cn/?func=getData._hq_cron();&list='
-SEL_LIST    = ['sh000300', 'sh000016', 'sh000905', 'sh000947', 'sh000991', 'sh000912']  
+SEL_LIST    = ['sh000001', 'sh601398', 'sh510880']  
+NAME_LIST    = ['上证综指', '工商银行', '红利etf']  
+HIGH_LIST    = [3000, 5.9, 2.9]  
+LOW_LIST    = [2700, 5.4, 2.6]  
+ALERT_LIST    = [False, False, False]  
 RCV_EMAIL = 'liu198456@126.com'
+gb_running = False
 
 def onlyNum(s,oth=','):
     s2 = s.lower();
@@ -37,9 +43,65 @@ def send_mail(to, subject, str_content):
     email_server.sendmail(from_email, [to], msg.as_string())
     email_server.quit()
 
+def thread_notify_stock(delay):
+    global HTML_STR
+    global ALERT_LIST
+    global HIGH_LIST
+    global LOW_LIST
+    global NAME_LIST
+    global RCV_EMAIL
+    global gb_running
+    print('thread notify stock has entered')
+    print(gb_running)
+    while gb_running:
+        curr_datetime = time.localtime()
+        if curr_datetime.tm_hour == 14:
+            for alert in ALERT_LIST:
+                alert = False
+            for alert in ALERT_LIST:
+                print (alert)
+        if curr_datetime.tm_hour >= 9 and curr_datetime.tm_hour <= 15:
+            strdate = time.strftime("%Y.%m.%d", curr_datetime)
+            str_message = strdate + ':\n';
+
+            response = urlopen(HTML_STR)
+            response_encoding = response.headers.get_content_charset()
+            print(response_encoding)
+            content = response.read()
+            #print(content)
+            str_content = content.decode(response_encoding)
+            print(str_content)
+            lines = str_content.split('\n')
+            index = 0;
+            b_notify = False
+            for line in lines:
+                print(line)
+                s1 = onlyNum(line)
+                print(s1)
+                if s1.count(',') > 3:
+                    str_val = s1.split(',')[3];
+                    print (str_val)
+                    f_val = float(str_val)
+                    if not ALERT_LIST[index] and f_val <= LOW_LIST[index]:
+                        str_message = str_message + NAME_LIST[index] + ' ' + str_val + ', '
+                        ALERT_LIST[index] = True
+                        b_notify = True
+                    if not ALERT_LIST[index] and f_val >= HIGH_LIST[index]:
+                        str_message = str_message + NAME_LIST[index] + ' ' + str_val + ', '
+                        ALERT_LIST[index] = True
+                        b_notify = True
+                index = index + 1
+            if b_notify:
+                print (str_message)         
+                send_mail(RCV_EMAIL,  'stock chance', str_message) 
+        print('thread notify stock is running')
+        time.sleep(delay)
+
+
 def main():
     global SEL_LIST;
     global HTML_STR;
+    global gb_running;
     count = len(SEL_LIST);
     strtmp = '';
     str_message = '';
@@ -51,28 +113,13 @@ def main():
     HTML_STR = HTML_STR + strtmp;
     print(HTML_STR);
     
+    gb_running = True
+try:
+    thread_notify = threading.Thread( target = thread_notify_stock, args = (600, ) )
+    thread_notify.start()
+except:
+    print('Error: unable to start thread')
 
-    strdate = time.strftime("%Y.%m.%d", time.localtime())
-    str_message = strdate + ':\n';
-
-    response = urlopen(HTML_STR)
-    response_encoding = response.headers.get_content_charset()
-    print(response_encoding)
-    content = response.read()
-    #print(content)
-    str_content = content.decode(response_encoding)
-    print(str_content)
-    lines = str_content.split('\n')
-    for line in lines:
-        print(line)
-        s1 = onlyNum(line)
-        print(s1)
-        if s1.count(',') > 3:
-            str_val = s1.split(',')[3];
-            print (str_val)
-            str_message = str_message + str_val + ', ';
-    print (str_message)         
-    send_mail(RCV_EMAIL,  'stock chance', str_message) 
 
 
 if __name__ == '__main__':
