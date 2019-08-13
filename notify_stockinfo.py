@@ -44,16 +44,25 @@ def send_mail(to, subject, str_content):
     email_server.quit()
 
 def thread_notify_stock(delay):
-    global HTML_STR
     global ALERT_LIST
     global HIGH_LIST
     global LOW_LIST
     global NAME_LIST
     global RCV_EMAIL
+    global SEL_LIST;
+    global HTML_STR;
+    count = len(SEL_LIST);
+    strtmp = '';
+    for i in range(0,count):
+        strtmp = strtmp + SEL_LIST[i];
+        if i < count - 1:
+            strtmp = strtmp + ','
+    HTML_STR = HTML_STR + strtmp;
+    print(HTML_STR);
     print('thread notify stock has entered')
     while True:
         curr_datetime = time.localtime()
-        if curr_datetime.tm_hour == 14:
+        if curr_datetime.tm_hour == 8:
             for alert in ALERT_LIST:
                 alert = False
             for alert in ALERT_LIST:
@@ -67,7 +76,7 @@ def thread_notify_stock(delay):
             print(response_encoding)
             str_content = response.read().decode(response_encoding)
             print(str_content)
-            logging.info(str_content)
+            #logging.info(str_content)
             lines = str_content.split('\n')
             index = 0;
             b_notify = False
@@ -87,7 +96,7 @@ def thread_notify_stock(delay):
                         b_notify = True
                 index = index + 1
             if b_notify:
-                logging.info (str_message)         
+                #logging.info (str_message)         
                 loggint.flush()
                 send_mail(RCV_EMAIL,  'stock chance', str_message) 
         print('thread notify stock is running')
@@ -95,20 +104,7 @@ def thread_notify_stock(delay):
 
 
 def main():
-    global SEL_LIST;
-    global HTML_STR;
     logging.basicConfig(filename='log_notify_stock.txt', level=logging.INFO, format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y/%m/%d %I:%M:%S')
-    count = len(SEL_LIST);
-    strtmp = '';
-    str_message = '';
-    str_content = '';
-    for i in range(0,count):
-        strtmp = strtmp + SEL_LIST[i];
-        if i < count - 1:
-            strtmp = strtmp + ','
-    HTML_STR = HTML_STR + strtmp;
-    logging.info(HTML_STR);
-    
 try:
     thread_notify = threading.Thread( target = thread_notify_stock, args = (600, ) )
     thread_notify.start()
