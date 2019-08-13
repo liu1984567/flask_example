@@ -6,7 +6,7 @@ from flask import render_template, current_app
 
 def send_mail(to, subject, template, **kwargs):
     from_email = current_app.config['MAIL_USERNAME']
-    msg = MIMEText(render_template(template + '.txt', **kwargs))
+    msg = MIMEText(render_template(template + '.html', **kwargs))
     msg['From'] = from_email
     msg['To'] = to 
     msg['Subject'] = current_app.config['FLASKY_MAIL_SUBJECT_PREFIX']+subject

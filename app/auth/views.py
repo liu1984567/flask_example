@@ -4,10 +4,11 @@
     Implements all views in the app.
 """
 from flask import render_template,redirect,url_for,flash,request
-from flask_login import login_required, login_user, logout_user
+from flask_login import login_required, login_user, logout_user, current_user
 from . import auth
 from .. import db
 from ..models import User
+from ..email import send_mail
 from .forms import LoginForm, RegistrationForm
 
 
@@ -35,9 +36,23 @@ def register():
     if form.validate_on_submit():
         user = User(username=form.username.data, email=form.email.data, password=form.password.data)
         db.session.add(user)
-        flash('You can login now.')
+        token = user.generate_confirmation_token()
+        send_mail(user.email, 'Confirm your account', 'auth/email/confirm', user=user,token=token)
+        str_confirmlink = url_for('auth.confirm', token=token, _external=True)
+        #flash('A confirmation email has been sent to you by email.')
         return redirect(url_for('auth.login'))
     return render_template('auth/register.html', form=form)
+
+@auth.route('/confirm/<token>')
+@login_required
+def confirm(token):
+    if (current_user.confirmed):
+        return redirect(url_for('main.index'))
+    if (current_user.confirm(token)):
+        flash('You have confirmed your account. Thanks!')
+    else:
+        flash('The confirmation link is invalid or has expired.')
+    return redirect(url_for('main.index'))
 
 @auth.route('/secret')
 @login_required
