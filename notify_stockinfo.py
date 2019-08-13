@@ -9,6 +9,7 @@ from urllib.request import urlopen
 import smtplib
 from email.mime.text import MIMEText
 import threading
+import logging
 
 
 HTML_STR = 'http://hq.sinajs.cn/?func=getData._hq_cron();&list='
@@ -18,7 +19,6 @@ HIGH_LIST    = [3000, 5.9, 2.9]
 LOW_LIST    = [2700, 5.4, 2.6]  
 ALERT_LIST    = [False, False, False]  
 RCV_EMAIL = 'liu198456@126.com'
-gb_running = False
 
 def onlyNum(s,oth=','):
     s2 = s.lower();
@@ -50,10 +50,8 @@ def thread_notify_stock(delay):
     global LOW_LIST
     global NAME_LIST
     global RCV_EMAIL
-    global gb_running
     print('thread notify stock has entered')
-    print(gb_running)
-    while gb_running:
+    while True:
         curr_datetime = time.localtime()
         if curr_datetime.tm_hour == 14:
             for alert in ALERT_LIST:
@@ -67,20 +65,17 @@ def thread_notify_stock(delay):
             response = urlopen(HTML_STR)
             response_encoding = response.headers.get_content_charset()
             print(response_encoding)
-            content = response.read()
-            #print(content)
-            str_content = content.decode(response_encoding)
+            str_content = response.read().decode(response_encoding)
             print(str_content)
+            logging.info(str_content)
             lines = str_content.split('\n')
             index = 0;
             b_notify = False
             for line in lines:
-                print(line)
                 s1 = onlyNum(line)
                 print(s1)
                 if s1.count(',') > 3:
                     str_val = s1.split(',')[3];
-                    print (str_val)
                     f_val = float(str_val)
                     if not ALERT_LIST[index] and f_val <= LOW_LIST[index]:
                         str_message = str_message + NAME_LIST[index] + ' ' + str_val + ', '
@@ -92,7 +87,8 @@ def thread_notify_stock(delay):
                         b_notify = True
                 index = index + 1
             if b_notify:
-                print (str_message)         
+                logging.info (str_message)         
+                loggint.flush()
                 send_mail(RCV_EMAIL,  'stock chance', str_message) 
         print('thread notify stock is running')
         time.sleep(delay)
@@ -101,7 +97,7 @@ def thread_notify_stock(delay):
 def main():
     global SEL_LIST;
     global HTML_STR;
-    global gb_running;
+    logging.basicConfig(filename='log_notify_stock.txt', level=logging.INFO, format='%(levelname)s:%(asctime)s:%(message)s', datefmt='%Y/%m/%d %I:%M:%S')
     count = len(SEL_LIST);
     strtmp = '';
     str_message = '';
@@ -111,9 +107,8 @@ def main():
         if i < count - 1:
             strtmp = strtmp + ','
     HTML_STR = HTML_STR + strtmp;
-    print(HTML_STR);
+    logging.info(HTML_STR);
     
-    gb_running = True
 try:
     thread_notify = threading.Thread( target = thread_notify_stock, args = (600, ) )
     thread_notify.start()
