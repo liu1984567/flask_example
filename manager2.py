@@ -9,7 +9,9 @@ from flask_migrate import Migrate, MigrateCommand
 from app import db, create_app
 from app.models import User, Role
 import os
+import logging
 
+logging.basicConfig(filename='log.txt',level=logging.DEBUG)
 app = create_app(os.environ.get('FLASKY_CONFIG') or 'default')
 manager = Manager(app)
 migrate = Migrate(app, db)
@@ -27,4 +29,5 @@ def test():
     unittest.TextTestRunner(verbosity=2).run(tests)
 
 if __name__ == '__main__': 
+    logging.info('manager run start')
     manager.run()

@@ -9,6 +9,7 @@ from . import auth
 from .. import db
 from ..models import User
 from ..email import send_mail
+from .. import logger
 from .forms import LoginForm, RegistrationForm
 
 
@@ -32,10 +33,13 @@ def logout():
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
+    logger.info('Enter register')
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(username=form.username.data, email=form.email.data, password=form.password.data)
         db.session.add(user)
+        db.session.commit()
+        logger.info('New user id %d', user.id)
         token = user.generate_confirmation_token()
         send_mail(user.email, 'Confirm your account', 'auth/email/confirm', user=user,token=token)
         str_confirmlink = url_for('auth.confirm', token=token, _external=True)
@@ -46,6 +50,7 @@ def register():
 @auth.route('/confirm/<token>')
 @login_required
 def confirm(token):
+    logger.info('Enter confirm: token {}' % (token))
     if (current_user.confirmed):
         return redirect(url_for('main.index'))
     if (current_user.confirm(token)):
