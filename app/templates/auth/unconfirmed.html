@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Flasky - login{% endblock %}
+
+{% block page_content %}
+<div class="page-head">
+	<p>Unconfirmed</p>
+</div>
+<h1>Hello, {{ current_user.username }}</h1>
+<h3>You Have not confirmed your account yet.</h3>
+<p>
+	Before you can access this site you need to confirm your account. Check your email box, you should receive an email with a confirmation link.
+	</br>
+	Need another confirmation email? 
+	<a href="{{ url_for('auth.sendconfirmation') }}">Click here</a>
+</p>
+{% endblock %}
