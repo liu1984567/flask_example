@@ -57,6 +57,22 @@ class User(UserMixin, db.Model):
         self.confirmed = True
         db.session.add(self)
         return True
+    
+    def generate_resetpwd_token(self, expiration=600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        token = s.dumps({'resetpwd': self.id})
+        return token
+
+    def check_resetpwd_token(self, token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('resetpwd') != self.id :
+            return False
+        return True
+
 
 @login_manager.user_loader
 def load_user(user_id):

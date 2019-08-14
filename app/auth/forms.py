@@ -24,3 +24,13 @@ class RegistrationForm(Form):
     def validate_username(self, field):
         if User.query.filter_by(username=field.data).first():
             raise ValidationError('Username have already registered.')
+
+class EmailForm(Form):
+    email = StringField('Please input your email', validators=[Required(), Length(1,64), Email()])
+    submit = SubmitField('Commit')
+
+class ResetpasswordForm(Form):
+    password = PasswordField('New password', validators=[Required(), EqualTo('password2', 'Password must match')])
+    password2 = PasswordField('Confirm password', validators=[Required()])
+    submit = SubmitField('Reset password')
+

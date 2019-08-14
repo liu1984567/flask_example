@@ -1,0 +1,11 @@
+<p>dear {{ user.username }}，</p>
+<p>Welcome to Flasky
+	<br/>
+	To reset your password, please click on the following link:<a href="{{ url_for('auth.start_resetpassword', token=token, _external=True)}}">confirm link</a>
+</p>
+<p>Sincerely
+	<br/>
+	The Flasky team
+	<br/>
+	Note: replied to this email address are not monirored
+</p>

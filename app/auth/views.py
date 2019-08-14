@@ -3,14 +3,14 @@
 
     Implements all views in the app.
 """
-from flask import render_template,redirect,url_for,flash,request
+from flask import render_template,redirect,url_for,flash,request,session
 from flask_login import login_required, login_user, logout_user, current_user
 from . import auth
 from .. import db
 from ..models import User
 from ..email import send_mail
 from .. import logger
-from .forms import LoginForm, RegistrationForm
+from .forms import LoginForm, RegistrationForm, ResetpasswordForm, EmailForm
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -82,6 +82,42 @@ def before_request():
         and request.endpoint[:5] != 'auth.' \
         and request.endpoint != 'static' : 
         return redirect(url_for('auth.unconfirmed'))
+
+@auth.route('/resetpassword', methods=['GET', 'POST'])
+def send_resetpassword():
+    form = EmailForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = user.generate_resetpwd_token()
+            send_mail(user.email, 'Reset your password', 'auth/email/resetpwd', user=user,token=token)
+            session['email'] = form.email.data
+            flash('A reset password email has been sent to you by email.')
+            return redirect(url_for('auth.login'))
+        flash('The email has not been registered!')
+    return render_template('auth/inputemail.html', form=form)
+
+@auth.route('/resetpwd/<token>')
+def start_resetpassword(token):
+    email = session.get('email')
+    if email:
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_resetpwd_token(token):
+            session['user'] = user
+            return render_template('auth/resetpwd.html', form=ResetpasswordForm())
+        flash('Email %s has not been registered or the token has been expired!' % (email))
+    return redirect(url_for('auth.login'))
+
+@auth.route('/resetpwd', methods=['GET', 'POST'])
+def resetpwd():
+    form = ResetpasswordForm
+    if form.validate_on_submit():
+        user = session['user']
+        user.password = form.password
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for('auth.login'))
+    return render_template('auth/resetpwd.html', form=form)
 
 @auth.route('/secret')
 @login_required
