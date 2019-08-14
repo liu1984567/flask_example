@@ -43,6 +43,7 @@ def register():
         token = user.generate_confirmation_token()
         send_mail(user.email, 'Confirm your account', 'auth/email/confirm', user=user,token=token)
         str_confirmlink = url_for('auth.confirm', token=token, _external=True)
+        logger.info('confirm link: ' + str_confirmlink)
         #flash('A confirmation email has been sent to you by email.')
         return redirect(url_for('auth.login'))
     return render_template('auth/register.html', form=form)
@@ -50,7 +51,7 @@ def register():
 @auth.route('/confirm/<token>')
 @login_required
 def confirm(token):
-    logger.info('Enter confirm: token {}' % (token))
+    #logger.info('Enter confirm: token {}' % (token))
     if (current_user.confirmed):
         return redirect(url_for('main.index'))
     if (current_user.confirm(token)):
