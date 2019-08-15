@@ -103,19 +103,23 @@ def start_resetpassword(token):
     if email:
         user = User.query.filter_by(email=email).first()
         if user and user.check_resetpwd_token(token):
-            session['user'] = user
-            return render_template('auth/resetpwd.html', form=ResetpasswordForm())
+            #form = ResetpasswordForm()
+            #return render_template('auth/resetpwd.html', form=form)
+            return redirect(url_for('auth.resetpwd'))
         flash('Email %s has not been registered or the token has been expired!' % (email))
     return redirect(url_for('auth.login'))
 
 @auth.route('/resetpwd', methods=['GET', 'POST'])
 def resetpwd():
-    form = ResetpasswordForm
-    if form.validate_on_submit():
-        user = session['user']
-        user.password = form.password
+    form = ResetpasswordForm()
+    email = session.get('email')
+    user = User.query.filter_by(email=email).first()
+    logger.info('resetpwd user %s' % user.username)
+    if user and form.validate_on_submit():
+        user.password = form.password.data
         db.session.add(user)
         db.session.commit()
+        flash('Your password has been update, please login with new password')
         return redirect(url_for('auth.login'))
     return render_template('auth/resetpwd.html', form=form)
 
