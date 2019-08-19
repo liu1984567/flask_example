@@ -4,12 +4,14 @@
     Implements all views in the app.
 """
 from flask import redirect, render_template, session, url_for, current_app
+from flask_login import login_required 
 from datetime import datetime
 from . import main
 from .forms import NameForm
 from .. import db
-from ..models import User
+from ..models import User, RolePermissionCode
 from ..email import send_mail
+from ..decorators import permission_required, admin_required
 
 
 @main.route('/', methods=['GET'])
@@ -32,3 +34,14 @@ def test():
     #moment.include_moment()
     return '<h1>time: %s </h1>' % datetime.utcnow()
 
+@main.route('/moderator')
+@login_required
+@permission_required(RolePermissionCode.MODERATOR)
+def for_moderator_only():
+    return 'For comment moderators!'
+
+@main.route('/admin')
+@login_required
+@admin_required
+def for_admin_only():
+    return 'For administrators!'

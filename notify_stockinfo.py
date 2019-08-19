@@ -97,7 +97,6 @@ def thread_notify_stock(delay):
                 index = index + 1
             if b_notify:
                 #logging.info (str_message)         
-                loggint.flush()
                 send_mail(RCV_EMAIL,  'stock chance', str_message) 
         print('thread notify stock is running')
         time.sleep(delay)
