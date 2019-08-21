@@ -32,6 +32,7 @@ def user(username):
 def edit_profile():
     user = current_user
     form = EditProfileForm()
+    logger.info('edit_profile name %s'% form.name.data)
     if form.validate_on_submit():
         user.name = form.name.data
         user.location = form.location.data
@@ -46,16 +47,23 @@ def edit_profile():
 @main.route('/edit_profile/<int:id>', methods=['GET', 'POST'])
 def edit_profile_admin(id):
     user = User.query.get_or_404(id)
+    logger.info('user name %s' % user.name)
     form = EditProfileAdminForm(user)
     if form.validate_on_submit():
         user.email = form.email.data
         user.username = form.username.data
         user.confirmed = form.confirmed.data
+        user.role_id = form.role.data
+        logger.info('user name %s' % user.name)
+        logger.info('form name %s' % form.name.data)
         user.name = form.name.data
+        logger.info('user name %s' % user.name)
         user.location = form.location.data
         user.about_me = form.about_me.data
         db.session.add(user)
+        db.session.commit()
         return redirect(url_for('main.user', username=user.username))
+    form.name.data = user.name
     return render_template('editprofile.html', form=form)
 
 @main.route('/redirect/bing')
