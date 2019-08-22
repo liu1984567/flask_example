@@ -8,25 +8,30 @@ from flask import abort
 from flask_login import login_required, current_user
 from datetime import datetime
 from . import main
-from .forms import NameForm, EditProfileForm, EditProfileAdminForm
+from .forms import NameForm, EditProfileForm, EditProfileAdminForm, PostForm
 from .. import db
-from ..models import User, RolePermissionCode
+from ..models import User, RolePermissionCode, Permission, Post
 from ..email import send_mail
 from ..decorators import permission_required, admin_required
 from .. import logger
 
 
-@main.route('/', methods=['GET'])
+@main.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    form = PostForm()
+    if current_user.can(Permission.WRITE_ARTICLES ) and form.validate_on_submit():
+        post = Post(body=form.body.data, author_id=current_user.id)
+        db.session.add(post)
+        return redirect(url_for('main.index'))
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html', form=form, posts=posts)
 
 #/user/liudonghao
 @main.route('/user/<username>')
 def user(username):
-    u = User.query.filter_by(username=username).first()
-    if u is None:
-        abort(404)
-    return render_template('user.html', user=u)
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = user.posts.order_by(Post.timestamp.desc()).all()
+    return render_template('user.html', user=user, posts=posts)
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
 def edit_profile():
@@ -54,16 +59,20 @@ def edit_profile_admin(id):
         user.username = form.username.data
         user.confirmed = form.confirmed.data
         user.role_id = form.role.data
-        logger.info('user name %s' % user.name)
         logger.info('form name %s' % form.name.data)
         user.name = form.name.data
-        logger.info('user name %s' % user.name)
         user.location = form.location.data
         user.about_me = form.about_me.data
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('main.user', username=user.username))
+    form.email.data = user.email
+    form.username.data = user.username
+    form.confirmed.data = user.confirmed
+    form.role.data = user.role_id
     form.name.data = user.name
+    form.location.data = user.location
+    form.about_me.data = user.about_me
     return render_template('editprofile.html', form=form)
 
 @main.route('/redirect/bing')

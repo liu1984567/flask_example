@@ -28,13 +28,6 @@ class EditProfileAdminForm(Form):
         super(EditProfileAdminForm, self).__init__(*args, **kwargs)
         self.user = user
         self.role.choices = [(role.id, role.name) for role in Role.query.order_by(Role.name).all()]
-        self.email.data = user.email
-        self.username.data = user.username
-        self.confirmed.data = user.confirmed
-        self.role.data = user.role_id
-        #self.name.data = user.name
-        self.location.data = user.location
-        self.about_me.data = user.about_me
     
     def validate_email(self, field):
         if self.user.email != self.email.data and User.query.filter_by(email=field.data).first():
@@ -42,3 +35,7 @@ class EditProfileAdminForm(Form):
     def validate_username(self, field):
         if self.user.username != self.username.data and User.query.filter_by(username=field.data).first():
             raise ValidationError('Username have already registered.')
+
+class PostForm(Form):
+    body = TextAreaField('What is on your mind?')
+    submit = SubmitField('Submit')
