@@ -8,7 +8,7 @@ from flask import abort
 from flask_login import login_required, current_user
 from datetime import datetime
 from . import main
-from .forms import NameForm, EditProfileForm, EditProfileAdminForm, PostForm
+from .forms import NameForm, EditProfileForm, EditProfileAdminForm, PostForm, PostFormEx
 from .. import db
 from ..models import User, RolePermissionCode, Permission, Post
 from ..email import send_mail
@@ -18,7 +18,8 @@ from .. import logger
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    form = PostForm()
+    #form = PostForm()
+    form = PostFormEx()
     if current_user.can(Permission.WRITE_ARTICLES ) and form.validate_on_submit():
         post = Post(body=form.body.data, author_id=current_user.id)
         db.session.add(post)

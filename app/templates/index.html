@@ -17,7 +17,17 @@
 </div>
 <div>
 	{% if current_user.can(Permission.WRITE_ARTICLES) %}
-	{{ wtf.quick_form(form) }}
+	<form action="" method=post>
+   	{{form.hidden_tag()}}
+   	<dl>
+      <dt>Title:
+      <dd>{{ form.title }}
+      <dt>Post:
+      <dd>{{ form.body(cols="35", rows="20") }}
+   	</dl>
+   	<p>
+      <input type=submit value="Publish">
+	</form>
 	{% endif %}
 </div>
 {% include '_posts.html' %}
@@ -26,4 +36,8 @@
 {{ macros.pagination_widget(pagination, '.index') }}
 </div>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
 {% endblock %}
