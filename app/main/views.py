@@ -18,8 +18,8 @@ from .. import logger
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    #form = PostForm()
-    form = PostFormEx()
+    form = PostForm()
+    #form = PostFormEx()
     if current_user.can(Permission.WRITE_ARTICLES ) and form.validate_on_submit():
         post = Post(body=form.body.data, author_id=current_user.id)
         db.session.add(post)
