@@ -8,8 +8,10 @@ from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app
 from datetime import datetime
+from markdown import markdown
+import bleach
 from . import db
-from . import login_manager
+from . import login_manager, logger
 
 class Permission:
     FOLLOW = 0x1
@@ -155,10 +157,24 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text())
+    body_html = db.Column(db.Text())
     timestamp = db.Column(db.DateTime(), default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     def __repr__(self):
         return '<post:%r %d>' % (self.author.username, self.id)
+
+    @staticmethod
+    def markdown_to_html(body_mk):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol',
+                'pre', 'strong', 'ul', 'h1', 'h2', 'h3', 'p']
+        body_html = markdown(body_mk, output_format='html') 
+        logger.info(body_html)
+        body_html = bleach.clean(body_html, tags=allowed_tags, strip=True)
+        logger.info(body_html)
+        body_html = bleach.linkify(body_html)
+        logger.info(body_html)
+        return body_html
+
     @staticmethod
     def generate_fake(count=100):
         from random import seed, randint

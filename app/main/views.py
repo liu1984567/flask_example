@@ -22,6 +22,7 @@ def index():
     #form = PostFormEx()
     if current_user.can(Permission.WRITE_ARTICLES ) and form.validate_on_submit():
         post = Post(body=form.body.data, author_id=current_user.id)
+        post.body_html = Post.markdown_to_html(post.body)
         db.session.add(post)
         return redirect(url_for('main.index'))
     #posts = Post.query.order_by(Post.timestamp.desc()).all()
@@ -29,6 +30,7 @@ def index():
     pagination = Post.query.order_by(Post.timestamp.desc()).paginate(page, per_page=10, error_out=False)
     posts = pagination.items
     return render_template('index.html', form=form, posts=posts, pagination=pagination)
+    #return render_template('index.html', form=form, posts=[], pagination=None)
 
 #/user/liudonghao
 @main.route('/user/<username>')
@@ -78,6 +80,11 @@ def edit_profile_admin(id):
     form.location.data = user.location
     form.about_me.data = user.about_me
     return render_template('editprofile.html', form=form)
+
+@main.route('/post/<int:id>')
+def post(id):
+    post = Post.query.get_or_404(id)
+    return render_template('post.html', posts=[post])
 
 @main.route('/redirect/bing')
 def jump_bing():
