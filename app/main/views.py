@@ -30,7 +30,6 @@ def index():
     pagination = Post.query.order_by(Post.timestamp.desc()).paginate(page, per_page=10, error_out=False)
     posts = pagination.items
     return render_template('index.html', form=form, posts=posts, pagination=pagination)
-    #return render_template('index.html', form=form, posts=[], pagination=None)
 
 #/user/liudonghao
 @main.route('/user/<username>')
@@ -85,6 +84,20 @@ def edit_profile_admin(id):
 def post(id):
     post = Post.query.get_or_404(id)
     return render_template('post.html', posts=[post])
+
+@main.route('/edit_post/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_post(id):
+    post = Post.query.get_or_404(id)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.body = form.body.data
+        post.body_html = Post.markdown_to_html(post.body)
+        db.session.add(post)
+        print('post.id %d' % id)
+        return redirect(url_for('.post', id=id))
+    form.body.data = post.body
+    return render_template('editpost.html', form=form)
 
 @main.route('/redirect/bing')
 def jump_bing():
