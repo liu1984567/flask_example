@@ -48,6 +48,12 @@ class Role(db.Model):
             db.session.add(role)
         db.session.commit()
 
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime(), default=datetime.utcnow)
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -62,8 +68,8 @@ class User(UserMixin, db.Model):
     last_seen    = db.Column(db.DateTime(), default=datetime.utcnow)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
-    followed = db.relationship('Follow', foreign_keys=['follows.follower_id'], backref=db.backref('follower', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
-    followers = db.relationship('Follow', foreign_keys=['follows.followed_id'], backref=db.backref('followed', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
+    followed = db.relationship('Follow', foreign_keys=[Follow.follower_id], backref=db.backref('follower', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
+    followers = db.relationship('Follow', foreign_keys=[Follow.followed_id], backref=db.backref('followed', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if self.role is None:
@@ -208,12 +214,6 @@ class Post(db.Model):
                     timestamp=forgery_py.date.date(True))
             db.session.add(p)
             db.session.commit()
-
-class Follow(db.Model):
-    __tablename__ = 'follows'
-    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    timestamp = db.Column(db.DateTime(), default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
