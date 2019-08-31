@@ -62,6 +62,8 @@ class User(UserMixin, db.Model):
     last_seen    = db.Column(db.DateTime(), default=datetime.utcnow)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    followed = db.relationship('Follow', foreign_keys=['follows.follower_id'], backref=db.backref('follower', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
+    followers = db.relationship('Follow', foreign_keys=['follows.followed_id'], backref=db.backref('followed', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if self.role is None:
@@ -125,6 +127,24 @@ class User(UserMixin, db.Model):
     def ping(self):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
+
+    def follow(self, user):
+        if not is_following(self, user):
+            f = Follow(follower_id=self.id, followed_id=user.id)
+            db.session.add(f)
+        
+    def unfollow(self, user):
+        f = self.followed.query.filter_by(followed_id=user.id).first()
+        if f:
+            db.session.delete(f)
+
+    def is_following(self, user):
+        return self.followed.query.filter_by(followed_id=user.id).first() is not None
+
+    def is_followed_by(self, user):
+        return self.followers.query.filter_by(follower_id=user.id).first() is not None
+
+
     @staticmethod
     def generate_fake(count=100):
         from sqlalchemy.exc import IntegrityError
@@ -188,6 +208,12 @@ class Post(db.Model):
                     timestamp=forgery_py.date.date(True))
             db.session.add(p)
             db.session.commit()
+
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime(), default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
