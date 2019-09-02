@@ -10,7 +10,7 @@ from datetime import datetime
 from . import main
 from .forms import NameForm, EditProfileForm, EditProfileAdminForm, PostForm, PostFormEx
 from .. import db
-from ..models import User, RolePermissionCode, Permission, Post
+from ..models import User, RolePermissionCode, Permission, Post, Follow
 from ..email import send_mail
 from ..decorators import permission_required, admin_required
 from .. import logger
@@ -40,8 +40,15 @@ def user(username):
 
 @main.route('/follow/<username>')
 @login_required
+@permission_required(Permission.FOLLOW)
 def follow(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalidate username')
+        return redirect(url_for('main.index'))
+    if current_user.is_following(user):
+        flash('You are already following this user')
+        return redirect(url_for('main.user', username=username))
     current_user.follow(user)
     posts = user.posts.order_by(Post.timestamp.desc()).all()
     return render_template('user.html', user=user, posts=posts)
@@ -49,20 +56,34 @@ def follow(username):
 @main.route('/unfollow/<username>')
 @login_required
 def unfollow(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalidate username')
+        return redirect(url_for('main.index'))
+    if not current_user.is_following(user):
+        flash('You have not followed this user')
+        return redirect(url_for('main.user', username=username))
     current_user.unfollow(user)
     posts = user.posts.order_by(Post.timestamp.desc()).all()
     return render_template('user.html', user=user, posts=posts)
 
 @main.route('/followers/<username>')
 def followers(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    followers = user.followers
-    return render_template('followers.html', user=user, followers=followers)
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalidate username')
+        return redirect(url_for('main.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followers.order_by(Follow.timestamp.desc()).paginate(page, per_page=10, error_out=False)
+    followers= [{'user':item.follower, 'timestamp':item.timestamp} for item in pagination.items]
+    return render_template('followers.html', user=user, followers=followers, pagination=pagination)
 
 @main.route('/followeds/<username>')
 def followeds(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalidate username')
+        return redirect(url_for('main.index'))
     followeds = user.followed
     return render_template('followeds.html', user=user, followers=followeds)
 
