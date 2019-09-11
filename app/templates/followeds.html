@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Flasky - Followeds of {% endblock %}
+
+{% block page_content %}
+<div class="page-head">
+	<h1>Followeds of {{ user.username }}</h1>
+</div>
+<div>
+	<ul>
+	{% for follower in followers %}
+		<li>
+			<a href="{{ url_for('.user', username=follower['user'].username) }}">{{ follower['user'].username }}</a>
+			<span>Following {{ moment(follower['timestamp']).format('YYYY/MM/DD, HH:mm:ss') }}</span>
+		</li>
+	{% endfor %}
+	</ul>
+</div>
+{% if pagination %}
+<div class="pagination">
+{{ macros.pagination_widget(pagination, '.followeds', username=user.username) }}
+</div>
+{% endif %}
+{% endblock %}

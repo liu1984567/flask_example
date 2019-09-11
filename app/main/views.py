@@ -84,8 +84,10 @@ def followeds(username):
     if user is None:
         flash('Invalidate username')
         return redirect(url_for('main.index'))
-    followeds = user.followed
-    return render_template('followeds.html', user=user, followers=followeds)
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followed.order_by(Follow.timestamp.desc()).paginate(page, per_page=10, error_out=False)
+    followers= [{'user':item.followed, 'timestamp':item.timestamp} for item in pagination.items]
+    return render_template('followeds.html', user=user, followers=followers, pagination=pagination)
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
 def edit_profile():
