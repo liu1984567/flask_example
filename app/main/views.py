@@ -3,7 +3,7 @@
 
     Implements all views in the app.
 """
-from flask import redirect, render_template, session, url_for, current_app, request
+from flask import redirect, render_template, session, url_for, current_app, request, make_response
 from flask import abort
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -18,6 +18,7 @@ from .. import logger
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
+    logger.info('index')
     form = PostForm()
     #form = PostFormEx()
     if current_user.can(Permission.WRITE_ARTICLES ) and form.validate_on_submit():
@@ -27,9 +28,16 @@ def index():
         return redirect(url_for('main.index'))
     #posts = Post.query.order_by(Post.timestamp.desc()).all()
     page = request.args.get('page', 1, type=int)
-    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(page, per_page=10, error_out=False)
+    show_followed = False
+    if current_user.is_authenticated:
+        show_followed = bool(request.cookies.get('show_followed', ''))
+    if show_followed:
+        query = current_user.followed_posts
+    else:
+        query = Post.query
+    pagination = query.order_by(Post.timestamp.desc()).paginate(page, per_page=10, error_out=False)
     posts = pagination.items
-    return render_template('index.html', form=form, posts=posts, pagination=pagination)
+    return render_template('index.html', form=form, posts=posts, pagination=pagination, show_followed=show_followed)
 
 #/user/liudonghao
 @main.route('/user/<username>')
@@ -149,6 +157,23 @@ def edit_post(id):
         return redirect(url_for('.post', id=id))
     form.body.data = post.body
     return render_template('editpost.html', form=form)
+
+@main.route('/all')
+@login_required
+def show_all():
+    logger.info('show all 1')
+    resp = make_response(redirect(url_for('.index')))
+    logger.info('show all 2')
+    resp.set_cookie('show_followed', '', max_age=30*24*60*60)
+    return resp
+
+@main.route('/followed')
+@login_required
+def show_followed():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
+    return resp
+
 
 @main.route('/redirect/bing')
 def jump_bing():
