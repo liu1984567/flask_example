@@ -12,7 +12,7 @@ from flask_migrate import Migrate, MigrateCommand
 import smtplib
 from email.mime.text import MIMEText
 import os
-
+test
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
